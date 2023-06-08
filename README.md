@@ -72,7 +72,14 @@ This project uses library [Accelerate](https://github.com/huggingface/accelerate
 accelerate launch train.py --config configs/{exp_name}.yaml
 ```
 
+### Evaluation
 
+```
+python evaluation.py --data_root {data_root} --batch_size {batch_size} --ks 1 10 50 \
+    --pretrained_clip_path
+```
+
+ This command will compute metrics of `hit@1,10,50` on the validation dataset of given `data_root` with `batch_size` and `pretrained_clip_path` specified.
 
 
 
