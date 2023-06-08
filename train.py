@@ -25,7 +25,7 @@ from accelerate.utils import set_seed
 from accelerate.logging import get_logger
 
 import transformers
-from transformers import CLIPProcessor, CLIPModel, CLIPTokenizerFast, CLIPImageProcessor
+from transformers import CLIPProcessor, CLIPModel
 
 from data.dataloader import CLIPDataset
 
@@ -70,6 +70,7 @@ def main(
     learning_rate: float = 1e-5,
     train_batch_size: int = 1,
     val_batch_size: int = 1,
+    num_workers: int = 96,
     max_train_steps: int = 1000,
     adam_beta1: float = 0.9,
     adam_beta2: float = 0.999,
@@ -158,15 +159,15 @@ def main(
         model, optimizer, train_dloader, val_dloader, lr_scheduler
     )
     
-    # mixed precision
-    weight_dtype = torch.float32
-    if accelerator.mixed_precision == "fp16":
-        weight_dtype = torch.float16
-    elif accelerator.mixed_precision == "bf16":
-        weight_dtype = torch.bfloat16
+    # # mixed precision
+    # weight_dtype = torch.float32
+    # if accelerator.mixed_precision == "fp16":
+    #     weight_dtype = torch.float16
+    # elif accelerator.mixed_precision == "bf16":
+    #     weight_dtype = torch.bfloat16
         
     # Move model to device and cast to weight_dtype
-    model.to(accelerator.device, dtype=weight_dtype)
+    model.to(accelerator.device)
     
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
     num_update_steps_per_epoch = math.ceil(len(train_dloader) / gradient_accumulation_steps)
@@ -238,7 +239,7 @@ def main(
                 inputs = {k: v.to(accelerator.device) for k, v in inputs.items()}
                 inputs.update({'return_loss': True})
                 outputs = model(**inputs)
-                
+                # Get loss
                 loss = outputs.loss
 
                 # Gather the losses across all processes for logging (if we use distributed training).
