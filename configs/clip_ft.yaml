@@ -3,10 +3,10 @@ data_root: ./dataset
 pretrained_clip_path: ../huggingface_models/openai--clip-vit-base-patch16
 seed: 0
 learning_rate: 1.0e-05
-train_batch_size: 32
-val_batch_size: 100
+train_batch_size: 128
+val_batch_size: 1000
 num_workers: 96
-max_train_steps: 1000
+max_train_steps: 10000
 adam_beta1: 0.9
 adam_beta2: 0.999
 adam_weight_decay: 1.0e-03
@@ -16,7 +16,7 @@ last_epoch: -1
 max_grad_norm: 1.0
 mixed_precision: fp16
 gradient_accumulation_steps: 1
-checkpointing_step_interv: 100
-validation_step_interv: 100
+checkpointing_step_interv: 1000
+validation_step_interv: 1000
 resume_from_checkpoint: latest
 output_dir: ./output

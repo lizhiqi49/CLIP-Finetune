@@ -24,7 +24,7 @@ class CLIPDataset(Dataset):
         self.split = split
         self.data_dir = os.path.join(root, split)
         
-        pairs_path = os.path.join(self.data_dir, f'img_text_pair_{split}.json')
+        pairs_path = os.path.join(self.data_dir, f'img_text_pair.json')
         with open(pairs_path, 'r') as f:
             pairs = json.load(f)
         # self.img_text_pairs = pairs
