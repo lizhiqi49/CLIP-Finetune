@@ -31,9 +31,6 @@ from data.dataloader import CLIPDataset
 
 logger = get_logger(__name__, log_level="INFO")
 
-data_root = './dataset'
-
-
 
 def get_scheduler(optimizer: Optimizer, num_warmup_steps: int = None, last_epoch: int = -1):
     """
@@ -65,6 +62,7 @@ def get_scheduler(optimizer: Optimizer, num_warmup_steps: int = None, last_epoch
 def main(
     *,
     exp_name: Optional[str] = None,
+    data_root: str = './dataset',
     pretrained_clip_path: str = 'openai/clip-vit-base-patch16',
     seed: Optional[int] = None,
     learning_rate: float = 1e-5,
