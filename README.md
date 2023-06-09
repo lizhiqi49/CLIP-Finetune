@@ -82,7 +82,7 @@ python evaluation.py --data_root {data_root} --batch_size {batch_size} --ks 1 10
 
 This command will compute metrics of `hit@1,10,50` on the validation dataset of given `data_root` with `batch_size`,  `pretrained_clip_path`, `pretrained_lora_path` specified. When both two pretrained model path provided, `pretrained_lora_path` first.
 
-Defaultly it will compute `hit@k` for images on all captions in the validation dataset. 
+Defaultly it will compute `hit@k` for images on all captions in the validation dataset. Finally, a .json file contains evaluation results will be saved in the provided pretrained path.
 
 
 
