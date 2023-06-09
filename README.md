@@ -76,10 +76,13 @@ accelerate launch train.py --config configs/{exp_name}.yaml
 
 ```
 python evaluation.py --data_root {data_root} --batch_size {batch_size} --ks 1 10 50 \
-    --pretrained_clip_path {pretrained_clip_path}
+    --pretrained_clip_path {pretrained_clip_path} \
+    --pretrained_lora_path {pretrained_lora_path}
 ```
 
-This command will compute metrics of `hit@1,10,50` on the validation dataset of given `data_root` with `batch_size` and `pretrained_clip_path` specified. Defaultly it will compute `hit@k` for images on all captions in the validation dataset. 
+This command will compute metrics of `hit@1,10,50` on the validation dataset of given `data_root` with `batch_size`,  `pretrained_clip_path`, `pretrained_lora_path` specified. When both two pretrained model path provided, `pretrained_lora_path` first.
+
+Defaultly it will compute `hit@k` for images on all captions in the validation dataset. 
 
 
 
@@ -92,8 +95,16 @@ directly using the raw data (unprocessed) to fine-tune the whole model, all capt
 
 3090 GPU x 4, each with batch size as 128, learning rate as 1e-5 with 100 steps warmup, training steps as 5000.
 
-Time consuming: 2.5h
+"""
+Time consuming: ~2.5h
 GPU memory consuming: 22G
+Number of Parameters: 100%
+
+hit@10: 0.0954
+hit@25: 0.1625
+hit@50: 0.2343
+hit@100: 0.3254
+"""
 
 
 ### clip_ft_lora_raw_data
@@ -101,6 +112,12 @@ GPU memory consuming: 22G
 Fine-tune CLIP model with LoRA and all attention projection layers (Q, K, V) are applied with LoRA.
 LoRA rank is set as 8 and it's scaling factor is set to 1.
 The dataset and training setup is the same as `clip_ft_full_raw_data`.
+
+"""
+Time consuming: ~1h
+GPU memory consuming: 16G
+Number of Parameters: 0.49%
+"""
 
 
 

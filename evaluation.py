@@ -3,6 +3,8 @@ This script contains functions for CLIP evaluation
 - top@k
 """
 
+import os
+import json
 import argparse
 import numpy as np
 import torch
@@ -11,6 +13,7 @@ from typing import Optional, Union
 from torch.utils.data import DataLoader
 
 from transformers import CLIPProcessor, CLIPModel
+from peft import PeftConfig, PeftModel
 
 from data.dataloader import CLIPDataset
 
@@ -245,21 +248,26 @@ class Evaluator:
 
 def main(
     data_root: str = './dataset',
-    pretrained_clip_path: str = '../huggingface_models/openai--clip-vit-base-patch16',
+    pretrained_clip_path: str = None,
+    pretrained_lora_path: str = None,
     batch_size: int = 1000,
     ks: Union[int, list[int]] = 1 
 ):
-    # pretrained_clip_path = '../huggingface_models/openai--clip-vit-base-patch16'
-    # data_root = './dataset'
-    # batch_size = 1000
-    # ks = [1, 10, 50, 100]
 
     dtype = torch.float16   # Use fp16 for evaluation
     device = torch.device('cuda:0') # Use single GPU for evaluation
+
+    if pretrained_lora_path is not None:    # LoRA first
+        peft_config = PeftConfig.from_pretrained(pretrained_lora_path)
+        pretrained_clip_path = peft_config.base_model_name_or_path
     
     # Load pretrained CLIP model
     processor = CLIPProcessor.from_pretrained(pretrained_clip_path)
     model = CLIPModel.from_pretrained(pretrained_clip_path)
+
+    if pretrained_lora_path is not None:
+        model = PeftModel.from_pretrained(model, pretrained_lora_path, is_trainable=False)
+
     model.to(device, dtype=dtype)
     model.requires_grad_(False)
     
@@ -296,7 +304,16 @@ def main(
 
     hit_ratio_k = hit_ratio_k_ / len(eval_dset)
 
-    print(hit_ratio_k)
+    # for i, k in enumerate(ks):
+    results = {f'hit@{k.item()}': hit_ratio_k[i] for i, k in enumerate(ks)}
+    print(results)
+
+    # save results
+    json_str = json.dumps(results, indent=4)
+    with open(os.path.join(pretrained_lora_path or pretrained_clip_path, 'eval_result.json'), 'w') as f:
+        f.write(json_str)
+
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CLIP evaluation')

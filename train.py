@@ -28,7 +28,7 @@ from deepspeed import DeepSpeedEngine
 import transformers
 from transformers import CLIPProcessor, CLIPModel
 
-from peft import LoraConfig, get_peft_model, PeftModel, PeftConfig, TaskType
+from peft import LoraConfig, get_peft_model, PeftModel, PeftConfig
 
 from data.dataloader import CLIPDataset
 
