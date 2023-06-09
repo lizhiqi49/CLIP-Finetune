@@ -305,7 +305,7 @@ def main(
     hit_ratio_k = hit_ratio_k_ / len(eval_dset)
 
     # for i, k in enumerate(ks):
-    results = {f'hit@{k.item()}': hit_ratio_k[i] for i, k in enumerate(ks)}
+    results = {f'hit@{k}': hit_ratio_k[i].item() for i, k in enumerate(ks)}
     print(results)
 
     # save results
