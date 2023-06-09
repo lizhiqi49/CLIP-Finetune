@@ -16,4 +16,6 @@ torch-ema
 huggingface_hub
 accelerate
 transformers
+peft
+deepspeed
 xformers
