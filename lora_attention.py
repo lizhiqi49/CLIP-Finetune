@@ -30,6 +30,7 @@ class LoRALinearLayer(nn.Module):
         return up_hidden_states.to(orig_dtype)
 
 
+# Copied and modified upon transformers.models.clip.modeling_clip.CLIPAttention
 class CLIPLoRAAttention(CLIPAttention):
 
     def __init__(self, config):
@@ -53,10 +54,14 @@ class CLIPLoRAAttention(CLIPAttention):
         bsz, tgt_len, embed_dim = hidden_states.size()
         lora_scale = self.config.lora_scale # TODO: add attribute `lora_scale`
 
+        # ====== LoRA forward here ====== #
         # get query proj
-        query_states = self.q_proj(hidden_states) * self.scale
-        key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-        value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
+        query_states = (self.q_proj(hidden_states) + self.lora_q_proj(hidden_states) * self.config.lora_scale) * self.scale
+        key_states = self.k_proj(hidden_states) + self.lora_k_proj(hidden_states) * self.config.lora_scale
+        value_states  = self.q_proj(hidden_states) + self.lora_q_proj(hidden_states) * self.config.lora_scale
+
+        key_states = self._shape(key_states, -1, bsz)
+        value_states = self._shape(value_states, -1, bsz)
 
         proj_shape = (bsz * self.num_heads, -1, self.head_dim)
         query_states = self._shape(query_states, tgt_len, bsz).view(*proj_shape)
