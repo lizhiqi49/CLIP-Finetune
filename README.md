@@ -90,6 +90,18 @@ This command will compute metrics of `hit@1,10,50` on the validation dataset of 
 
 directly using the raw data (unprocessed) to fine-tune the whole model, all captions are padding or truncated to the model_max_length, which is 77.
 
-3090 GPU x 4, each with batch size as 128, learning rate as 1e-5, training steps as 5000.
+3090 GPU x 4, each with batch size as 128, learning rate as 1e-5 with 100 steps warmup, training steps as 5000.
+
+Time consuming: 2.5h
+GPU memory consuming: 22G
+
+
+### clip_ft_lora_raw_data
+
+Fine-tune CLIP model with LoRA and all attention projection layers (Q, K, V) are applied with LoRA.
+LoRA rank is set as 8 and it's scaling factor is set to 1.
+The dataset and training setup is the same as `clip_ft_full_raw_data`.
+
+
 
 
