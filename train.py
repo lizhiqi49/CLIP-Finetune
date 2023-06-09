@@ -32,6 +32,13 @@ from data.dataloader import CLIPDataset
 logger = get_logger(__name__, log_level="INFO")
 
 
+# TODO: tokenizer's parallelism issue
+# huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+# To disable this warning, you can either:
+# 	- Avoid using `tokenizers` before the fork if possible
+# 	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+
+
 def get_scheduler(optimizer: Optimizer, num_warmup_steps: int = None, last_epoch: int = -1):
     """
     Create a schedule with a constant learning rate preceded by a warmup period during which the learning rate
@@ -122,6 +129,7 @@ def main(
     # Load pretrained clip model
     model = CLIPModel.from_pretrained(pretrained_clip_path)
     processor = CLIPProcessor.from_pretrained(pretrained_clip_path)
+    logger.info(f"  Load pretrained CLIP model from {pretrained_clip_path}.")
     
     
     # Load dataset
@@ -131,7 +139,7 @@ def main(
         processor=processor
     )
     train_dloader = DataLoader(
-        train_dset, batch_size=train_batch_size, shuffle=True
+        train_dset, batch_size=train_batch_size, shuffle=True, num_workers=num_workers
     )
     val_dset = CLIPDataset(root=data_root, split='val', processor=processor)
     val_dloader = DataLoader(
@@ -220,8 +228,9 @@ def main(
     progress_bar = tqdm(range(global_step, max_train_steps), disable=not accelerator.is_local_main_process)
     progress_bar.set_description("Steps")
     
+    model.eval()    # frozen dropout and layer norms
     for epoch in range(first_epoch, num_train_epochs):
-        model.train()
+        # model.train()
         train_loss = 0.0
         for step, batch in enumerate(train_dloader):
             # Skip steps until we reach the resumed step
