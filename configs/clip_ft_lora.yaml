@@ -9,8 +9,8 @@ lora_config:
   lora_dropout: 0
   target_modules: 
     - q_proj
+    - k_proj
     - v_proj
-
 seed: 0
 learning_rate: 1.0e-05
 train_batch_size: 128
