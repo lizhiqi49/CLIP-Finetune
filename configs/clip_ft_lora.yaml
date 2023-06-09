@@ -1,12 +1,22 @@
-exp_name: clip_ft_raw_data
+exp_name: clip_ft_lora_raw_data
 data_root: ./dataset
 pretrained_clip_path: ../huggingface_models/openai--clip-vit-base-patch16
+use_lora: True
+pretrained_lora_path: null
+lora_config:
+  r: 8
+  lora_alpha: 1
+  lora_dropout: 0
+  target_modules: 
+    - q_proj
+    - v_proj
+
 seed: 0
 learning_rate: 1.0e-05
 train_batch_size: 128
 val_batch_size: 1000
 num_workers: 96
-max_train_steps: 10000
+max_train_steps: 5000
 adam_beta1: 0.9
 adam_beta2: 0.999
 adam_weight_decay: 1.0e-03

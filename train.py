@@ -23,9 +23,12 @@ from omegaconf import OmegaConf
 from accelerate import Accelerator
 from accelerate.utils import set_seed
 from accelerate.logging import get_logger
+from deepspeed import DeepSpeedEngine
 
 import transformers
 from transformers import CLIPProcessor, CLIPModel
+
+from peft import LoraConfig, get_peft_model, PeftModel, PeftConfig, TaskType
 
 from data.dataloader import CLIPDataset
 
@@ -71,6 +74,9 @@ def main(
     exp_name: Optional[str] = None,
     data_root: str = './dataset',
     pretrained_clip_path: str = 'openai/clip-vit-base-patch16',
+    use_lora: bool = False,
+    pretrained_lora_path: Optional[str] = None,
+    lora_config: Optional[dict] = None,
     seed: Optional[int] = None,
     learning_rate: float = 1e-5,
     train_batch_size: int = 1,
@@ -127,10 +133,46 @@ def main(
         OmegaConf.save(config, os.path.join(output_dir, 'config.yaml'))
     
     # Load pretrained clip model
+    # model = CLIPModel.from_pretrained(pretrained_clip_path)
+    # processor = CLIPProcessor.from_pretrained(pretrained_clip_path)
+    # logger.info(f"  Load pretrained CLIP model from {pretrained_clip_path}.")
+
+    # mixed precision
+    weight_dtype = torch.float32
+    if accelerator.mixed_precision == "fp16":
+        weight_dtype = torch.float16
+    elif accelerator.mixed_precision == "bf16":
+        weight_dtype = torch.bfloat16
+
+    # Examine arguments
+    if pretrained_clip_path is None and pretrained_lora_path is None:
+        raise ValueError("No available pretrained CLIP path given!")
+    
+    if pretrained_clip_path is None:
+        assert use_lora, "When fine-tuning full parameters, the pretrained CLIP path must be given."
+        peft_config = PeftConfig.from_pretrained(pretrained_lora_path)
+        pretrained_clip_path = peft_config.base_model_name_or_path
+
+    # Load CLIP model
     model = CLIPModel.from_pretrained(pretrained_clip_path)
     processor = CLIPProcessor.from_pretrained(pretrained_clip_path)
-    logger.info(f"  Load pretrained CLIP model from {pretrained_clip_path}.")
-    
+    model.to(dtype=weight_dtype)
+    logger.info(f"Load pretrained CLIP model from {pretrained_clip_path} and cast it to {weight_dtype}")
+
+    # Maybe use lora
+    if use_lora:
+        if pretrained_lora_path is not None:
+            model = PeftModel.from_pretrained(model, pretrained_lora_path, is_trainable=True)
+            logger.info(f"  Use LoRA: {use_lora}, load pretrained LoRA model from {pretrained_lora_path}.")
+        else:   # new lora layers
+            assert lora_config is not None, "You are using LoRA fine-tuning and no `pretrained_lora_path` given, you should give a `lora_config` for initialization."
+            config = LoraConfig(
+                **lora_config
+            )
+            model = get_peft_model(model, config)
+            logger.info(f"  Use LoRA: {use_lora}, no `pretrained_lora_path` provided, new LoRA layers are initialized.")
+        model.print_trainable_parameters()
+    model.eval()    # frozen dropout and norm layers
     
     # Load dataset
     train_dset = CLIPDataset(
@@ -165,12 +207,6 @@ def main(
         model, optimizer, train_dloader, val_dloader, lr_scheduler
     )
     
-    # # mixed precision
-    # weight_dtype = torch.float32
-    # if accelerator.mixed_precision == "fp16":
-    #     weight_dtype = torch.float16
-    # elif accelerator.mixed_precision == "bf16":
-    #     weight_dtype = torch.bfloat16
         
     # Move model to device and cast to weight_dtype
     model.to(accelerator.device)
@@ -228,7 +264,6 @@ def main(
     progress_bar = tqdm(range(global_step, max_train_steps), disable=not accelerator.is_local_main_process)
     progress_bar.set_description("Steps")
     
-    model.eval()    # frozen dropout and layer norms
     for epoch in range(first_epoch, num_train_epochs):
         # model.train()
         train_loss = 0.0
@@ -309,15 +344,20 @@ def main(
     if accelerator.is_main_process:
         model = accelerator.unwrap_model(model)
         model.save_pretrained(f"{output_dir}/pretrained")
+        # Remember to save the processor
+        if not use_lora:
+            processor.save_pretrained(f"{output_dir}/pretrained")
     accelerator.end_training()
     
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="./configs/clip_ft.yaml")
+    parser.add_argument("--config", type=str, default="./configs/clip_ft_lora.yaml")
     args = parser.parse_args()
 
-    main(**OmegaConf.load(args.config))
+    config = OmegaConf.load(args.config)
+    config = OmegaConf.to_container(config)
+    main(**config)
 
     
     
