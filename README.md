@@ -76,10 +76,20 @@ accelerate launch train.py --config configs/{exp_name}.yaml
 
 ```
 python evaluation.py --data_root {data_root} --batch_size {batch_size} --ks 1 10 50 \
-    --pretrained_clip_path
+    --pretrained_clip_path {pretrained_clip_path}
 ```
 
 This command will compute metrics of `hit@1,10,50` on the validation dataset of given `data_root` with `batch_size` and `pretrained_clip_path` specified. Defaultly it will compute `hit@k` for images on all captions in the validation dataset. 
 
+
+
+
+## Experiment logs
+
+### clip_ft_full_raw_data
+
+directly using the raw data (unprocessed) to fine-tune the whole model, all captions are padding or truncated to the model_max_length, which is 77.
+
+3090 GPU x 4, each with batch size as 128, learning rate as 1e-5, training steps as 5000.
 
 
