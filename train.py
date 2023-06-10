@@ -12,12 +12,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import imageio.v2 as imageio
+from enum import Enum
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
 from einops import rearrange
-from typing import Optional, Literal
+from typing import Optional, Literal, Union
 from omegaconf import OmegaConf
 
 from accelerate import Accelerator
@@ -26,7 +27,8 @@ from accelerate.logging import get_logger
 from deepspeed import DeepSpeedEngine
 
 import transformers
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, get_scheduler
+from transformers.trainer_utils import SchedulerType
 
 from peft import LoraConfig, get_peft_model, PeftModel, PeftConfig
 
@@ -42,30 +44,18 @@ logger = get_logger(__name__, log_level="INFO")
 # 	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
 
 
-def get_scheduler(optimizer: Optimizer, num_warmup_steps: int = None, last_epoch: int = -1):
-    """
-    Create a schedule with a constant learning rate preceded by a warmup period during which the learning rate
-    increases linearly between 0 and the initial lr set in the optimizer.
 
-    Args:
-        optimizer ([`~torch.optim.Optimizer`]):
-            The optimizer for which to schedule the learning rate.
-        num_warmup_steps (`int`):
-            The number of steps for the warmup phase. 
-        last_epoch (`int`, *optional*, defaults to -1):
-            The index of the last epoch when resuming training.
-
-    Return:
-        `torch.optim.lr_scheduler.LambdaLR` with the appropriate schedule.
-    """
-    if num_warmup_steps is not None:
-        def lr_lambda(current_step: int):
-            if current_step < num_warmup_steps:
-                return float(current_step) / float(max(1.0, num_warmup_steps))
-            return 1.0
-    else:
-        lr_lamdba = lambda _: 1
-    return LambdaLR(optimizer, lr_lambda, last_epoch=last_epoch)
+# Copied from transformers.training_utils.SchedulerType
+# For explicitely enum scheduler types
+class SchedulerType(Enum):
+    LINEAR = "linear"
+    COSINE = "cosine"
+    COSINE_WITH_RESTARTS = "cosine_with_restarts"
+    POLYNOMIAL = "polynomial"
+    CONSTANT = "constant"
+    CONSTANT_WITH_WARMUP = "constant_with_warmup"
+    INVERSE_SQRT = "inverse_sqrt"
+    REDUCE_ON_PLATEAU = "reduce_lr_on_plateau"
         
 
 
@@ -87,8 +77,8 @@ def main(
     adam_beta2: float = 0.999,
     adam_weight_decay: float = 1e-3,
     adam_epsilon: float = 1e-08,
+    scheduler_type: Union[str, SchedulerType] = 'constant',
     num_warmup_steps: Optional[int] = None,
-    last_epoch: int = -1,
     max_grad_norm: float = 1.0,
     mixed_precision: Literal['no', 'fp16'] = 'fp16',
     gradient_accumulation_steps: int = 1,
@@ -199,7 +189,7 @@ def main(
     )
     # lr scheduler
     lr_scheduler = get_scheduler(
-        optimizer, num_warmup_steps, last_epoch
+        scheduler_type, optimizer, num_warmup_steps, max_train_steps
     )
     
     # Prepare everything with `accelerator`
