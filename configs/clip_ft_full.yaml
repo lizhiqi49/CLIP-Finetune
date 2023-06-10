@@ -14,8 +14,8 @@ adam_beta1: 0.9
 adam_beta2: 0.999
 adam_weight_decay: 1.0e-03
 adam_epsilon: 1.0e-08
+scheduler_type: constant_with_warmup
 num_warmup_steps: 100
-last_epoch: -1
 max_grad_norm: 1.0
 mixed_precision: fp16
 gradient_accumulation_steps: 1
