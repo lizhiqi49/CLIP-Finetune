@@ -28,7 +28,6 @@ from deepspeed import DeepSpeedEngine
 
 import transformers
 from transformers import CLIPProcessor, CLIPModel, get_scheduler
-from transformers.trainer_utils import SchedulerType
 
 from peft import LoraConfig, get_peft_model, PeftModel, PeftConfig
 
@@ -161,7 +160,8 @@ def main(
             )
             model = get_peft_model(model, config)
             logger.info(f"  Use LoRA: {use_lora}, no `pretrained_lora_path` provided, new LoRA layers are initialized.")
-        model.print_trainable_parameters()
+        if accelerator.is_main_process:
+            model.print_trainable_parameters()
     model.eval()    # frozen dropout and norm layers
     
     # Load dataset
@@ -189,7 +189,7 @@ def main(
     )
     # lr scheduler
     lr_scheduler = get_scheduler(
-        scheduler_type, optimizer, num_warmup_steps, max_train_steps
+        scheduler_type, optimizer, num_warmup_steps, max_train_steps * accelerator.num_processes
     )
     
     # Prepare everything with `accelerator`
