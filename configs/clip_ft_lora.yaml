@@ -14,8 +14,8 @@ lora_config:
 seed: 0
 learning_rate: 2.0e-03
 train_batch_size: 128
-val_batch_size: 1000
-num_workers: 48
+val_batch_size: 500
+num_workers: 16
 max_train_steps: 10000
 adam_beta1: 0.9
 adam_beta2: 0.999
@@ -27,6 +27,6 @@ max_grad_norm: 1.0
 mixed_precision: fp16
 gradient_accumulation_steps: 1
 checkpointing_step_interv: 1000
-validation_step_interv: 10000
-resume_from_checkpoint: null
+validation_step_interv: 1000
+resume_from_checkpoint: latest
 output_dir: ./output

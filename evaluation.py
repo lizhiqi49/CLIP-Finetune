@@ -319,6 +319,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CLIP evaluation')
     parser.add_argument("--data_root", type=str, default='./dataset')
     parser.add_argument("--pretrained_clip_path", type=str, default="openai/clip-vit-base-patch16")
+    parser.add_argument("--pretrained_lora_path", type=str, default=None)
     parser.add_argument("--batch_size", type=int, default=1000,)
     parser.add_argument("--ks", type=int, nargs='+')
     args = parser.parse_args()

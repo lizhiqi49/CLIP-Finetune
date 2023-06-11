@@ -36,12 +36,12 @@ from data.dataloader import CLIPDataset
 logger = get_logger(__name__, log_level="INFO")
 
 
-# TODO: tokenizer's parallelism issue
+# tokenizer's parallelism issue
 # huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
 # To disable this warning, you can either:
 # 	- Avoid using `tokenizers` before the fork if possible
 # 	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
-
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 
 # Copied from transformers.training_utils.SchedulerType
@@ -248,7 +248,7 @@ def main(
 
             first_epoch = global_step // num_update_steps_per_epoch
             resume_step = global_step % num_update_steps_per_epoch
-            lr_scheduler.last_epoch = resume_step
+            lr_scheduler.last_epoch = global_step
             
     # Only show the progress bar once on each machine.
     progress_bar = tqdm(range(global_step, max_train_steps), disable=not accelerator.is_local_main_process)
@@ -306,6 +306,7 @@ def main(
                     # if accelerator.is_main_process:
                     val_pbar = tqdm(val_dloader, leave=False, disable=not accelerator.is_local_main_process)
                     val_pbar.set_description("Val")
+                    val_losses = []
                     for batch in val_dloader:    # only one batch
                         # Get input
                         inputs = batch
@@ -320,11 +321,14 @@ def main(
                         # Gather the losses across all processes for logging (if we use distributed training).
                         avg_loss = accelerator.gather(loss.repeat(val_batch_size)).mean()
                         val_loss = avg_loss.item() 
+                        val_losses.append(val_loss)
                         
                         # Logging
-                        accelerator.log({"val_loss": val_loss}, step=global_step)
                         val_pbar.update(1)
-                        val_pbar.set_postfix({"val_step_loss": val_loss})
+                        
+                    val_mean_loss = np.mean(val_losses)
+                    accelerator.log({"val_mean_loss": val_mean_loss}, step=global_step)
+                    val_pbar.set_postfix({"val_mean_loss": val_mean_loss})
                     
 
             if global_step >= max_train_steps:

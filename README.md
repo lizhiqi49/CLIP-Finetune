@@ -89,6 +89,18 @@ Defaultly it will compute `hit@k` for images on all captions in the validation d
 
 ## Experiment logs
 
+### evaluation before fine-tuning
+
+Directly perform evaluation on *openai/clip-vit-base-patch16*
+
+```
+hit@10: 0.0011
+hit@25: 0.0026
+hit@50: 0.0050
+hit@100: 0.0101
+```
+
+
 ### clip_ft_full_raw_data
 
 directly using the raw data (unprocessed) to fine-tune the whole model, all captions are padding or truncated to the model_max_length, which is 77.
@@ -111,13 +123,30 @@ hit@100: 0.3254
 
 Fine-tune CLIP model with LoRA and all attention projection layers (Q, K, V) are applied with LoRA.
 LoRA rank is set as 8 and it's scaling factor is set to 1.
-The dataset and training setup is the same as `clip_ft_full_raw_data`.
+The dataset  is the same as `clip_ft_full_raw_data`.
+
+3090 GPU x 4, each with batch size as 128, learning rate initially 0.002 under cosine scheduler gradually decay to 0 with no warmup, training steps as 10000.
 
 ```
-Time consuming: ~1h
+Time consuming: ~2h
 GPU memory consuming: 16G
 Number of Parameters: 0.49%
+
+hit@10: 0.0409
+hit@25: 0.0846
+hit@50: 0.1365
+hit@100: 0.2162
 ```
+
+
+### clip_ft_full_processed_data
+
+...
+
+
+### clip_ft_lora_processed_data
+
+...
 
 
 
