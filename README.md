@@ -132,10 +132,10 @@ Time consuming: ~2h
 GPU memory consuming: 16G
 Number of Parameters: 0.49%
 
-hit@10: 0.0409
-hit@25: 0.0846
-hit@50: 0.1365
-hit@100: 0.2162
+hit@10: 0.0422
+hit@25: 0.0844
+hit@50: 0.1418
+hit@100: 0.2225
 ```
 
 
