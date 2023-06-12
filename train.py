@@ -67,6 +67,7 @@ def main(
     pretrained_lora_path: Optional[str] = None,
     lora_config: Optional[dict] = None,
     seed: Optional[int] = None,
+    train_split: Literal['train_raw', 'train_sub', 'train_all'] = 'train_raw',
     learning_rate: float = 1e-5,
     train_batch_size: int = 1,
     val_batch_size: int = 1,
@@ -167,7 +168,7 @@ def main(
     # Load dataset
     train_dset = CLIPDataset(
         root=data_root,
-        split='train',
+        split=train_split,
         processor=processor
     )
     train_dloader = DataLoader(
