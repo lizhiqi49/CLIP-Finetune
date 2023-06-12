@@ -8,6 +8,7 @@ import numpy as np
 import imageio.v3 as imageio
 import torch
 
+from typing import Literal
 from torch.utils.data import Dataset
 from transformers import CLIPProcessor
 
@@ -17,36 +18,46 @@ class CLIPDataset(Dataset):
         self,
         root,
         processor: CLIPProcessor,
-        split: str = 'train',
+        split: Literal['train_raw', 'train_sub', 'train_all'] = 'train_raw'
     ):
         
         super().__init__()
+        self.data_root = root
         self.split = split
-        self.data_dir = os.path.join(root, split)
         
-        pairs_path = os.path.join(self.data_dir, f'img_text_pair.json')
-        with open(pairs_path, 'r') as f:
-            pairs = json.load(f)
-        # self.img_text_pairs = pairs
+        if split != 'train_all':
+            img_paths, captions = self.load_data_for_split(split)
+        else:
+            img_paths_raw, captions_raw = self.load_data_for_split('train_raw')
+            img_paths_sub, captions_sub = self.load_data_for_split('train_sub')
+            img_paths = img_paths_raw + img_paths_sub
+            captions = captions_raw + captions_sub
         
-        img_names = []
-        captions = []
-        for pair in pairs:
-            img_names.append(pair['img'])
-            captions.append(pair['caption'])
-        self.img_names = img_names
+        self.img_paths = img_paths
         self.captions = captions
         
         self.processor = processor
+
+    def load_data_for_split(self, split):
+        pairs_path = os.path.join(self.data_root, split, 'img_text_pair.json')
+        with open(pairs_path, 'r') as f:
+            pairs = json.load(f)
+        img_paths = []
+        captions = []
+        for pair in pairs:
+            img_path = os.path.join(self.data_root, split, 'imgs', pair['img'])
+            img_paths.append(img_path)
+            captions.append(pair['caption'])
+        return img_paths, captions
+
         
     def __len__(self):
         return len(self.img_names)
     
     def __getitem__(self, index):
-        img_name = self.img_names[index]
+        img_path = self.img_paths[index]
         caption = self.captions[index]
         
-        img_path = os.path.join(self.data_dir, 'imgs', img_name)
         image = imageio.imread(img_path).astype(np.float32) / 255.0
         
         # To CHW
