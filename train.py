@@ -191,7 +191,9 @@ def main(
     )
     # lr scheduler
     lr_scheduler = get_scheduler(
-        scheduler_type, optimizer, num_warmup_steps, max_train_steps * accelerator.num_processes
+        scheduler_type, optimizer, 
+        num_warmup_steps * accelerator.num_processes, 
+        max_train_steps * accelerator.num_processes
     )
     
     # Prepare everything with `accelerator`

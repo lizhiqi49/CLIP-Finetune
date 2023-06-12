@@ -6,7 +6,7 @@ pretrained_lora_path: null
 lora_config: null
 seed: 0
 train_split: train_all
-learning_rate: 1.0e-05
+learning_rate: 5.0e-06
 train_batch_size: 128
 val_batch_size: 500
 num_workers: 16
@@ -15,12 +15,12 @@ adam_beta1: 0.9
 adam_beta2: 0.999
 adam_weight_decay: 1.0e-03
 adam_epsilon: 1.0e-08
-scheduler_type: constant_with_warmup
+scheduler_type: cosine
 num_warmup_steps: 100
 max_grad_norm: 1.0
 mixed_precision: fp16
 gradient_accumulation_steps: 1
 checkpointing_step_interv: 1000
 validation_step_interv: 1000
-resume_from_checkpoint: latest
+resume_from_checkpoint: null
 output_dir: ./output
