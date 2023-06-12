@@ -1,18 +1,12 @@
-exp_name: clip_ft_lora_raw_data
+exp_name: clip_ft_full_all
 data_root: ./dataset
 pretrained_clip_path: ../huggingface_models/openai--clip-vit-base-patch16
-use_lora: True
+use_lora: False
 pretrained_lora_path: null
-lora_config:
-  r: 8
-  lora_alpha: 1
-  lora_dropout: 0
-  target_modules: 
-    - q_proj
-    - k_proj
-    - v_proj
+lora_config: null
 seed: 0
-learning_rate: 2.0e-03
+train_split: train_all
+learning_rate: 1.0e-05
 train_batch_size: 128
 val_batch_size: 500
 num_workers: 16
@@ -21,8 +15,8 @@ adam_beta1: 0.9
 adam_beta2: 0.999
 adam_weight_decay: 1.0e-03
 adam_epsilon: 1.0e-08
-scheduler_type: cosine
-num_warmup_steps: 0
+scheduler_type: constant_with_warmup
+num_warmup_steps: 100
 max_grad_norm: 1.0
 mixed_precision: fp16
 gradient_accumulation_steps: 1

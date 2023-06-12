@@ -5,6 +5,7 @@ use_lora: False
 pretrained_lora_path: null
 lora_config: null
 seed: 0
+train_split: train_raw
 learning_rate: 1.0e-05
 train_batch_size: 128
 val_batch_size: 1000
