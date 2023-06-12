@@ -146,11 +146,12 @@ def main(
     # Load CLIP model
     model = CLIPModel.from_pretrained(pretrained_clip_path)
     processor = CLIPProcessor.from_pretrained(pretrained_clip_path)
-    model.to(dtype=weight_dtype)
-    logger.info(f"Load pretrained CLIP model from {pretrained_clip_path} and cast it to {weight_dtype}")
+    logger.info(f"Load pretrained CLIP model from {pretrained_clip_path}.")
 
     # Maybe use lora
     if use_lora:
+        model.to(dtype=weight_dtype)
+        logger.info(f"  Use LoRA: {use_lora}, cast CLIP model weights to {weight_dtype}.")
         if pretrained_lora_path is not None:
             model = PeftModel.from_pretrained(model, pretrained_lora_path, is_trainable=True)
             logger.info(f"  Use LoRA: {use_lora}, load pretrained LoRA model from {pretrained_lora_path}.")
