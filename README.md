@@ -146,7 +146,14 @@ hit@100: 0.2225
 
 ### clip_ft_lora_processed_data
 
-...
+same setting with `clip_ft_lora_raw_data`
+
+```
+hit@10: 0.0525
+hit@25: 0.1006
+hit@50: 0.1619
+hit@100: 0.2515
+```
 
 
 
