@@ -141,7 +141,14 @@ hit@100: 0.2225
 
 ### clip_ft_full_processed_data
 
-...
+same setting with `clip_ft_full_raw_data` except that trained for 10000 steps with learning rate initially 5.0e-06 decayed to 0 under cosine scheduler and with 100 steps of warmup.
+
+```
+hit@10: 0.1014
+hit@25: 0.1751
+hit@50: 0.2496
+hit@100: 0.3476
+```
 
 
 ### clip_ft_lora_processed_data
