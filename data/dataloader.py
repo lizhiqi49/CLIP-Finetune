@@ -52,7 +52,7 @@ class CLIPDataset(Dataset):
 
         
     def __len__(self):
-        return len(self.img_names)
+        return len(self.img_paths)
     
     def __getitem__(self, index):
         img_path = self.img_paths[index]
