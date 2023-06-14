@@ -164,7 +164,8 @@ def main(
             logger.info(f"  Use LoRA: {use_lora}, no `pretrained_lora_path` provided, new LoRA layers are initialized.")
         if accelerator.is_main_process:
             model.print_trainable_parameters()
-    model.eval()    # frozen dropout and norm layers
+    # model.eval()    # frozen dropout and norm layers
+    model.train()
     
     # Load dataset
     train_dset = CLIPDataset(
@@ -273,6 +274,7 @@ def main(
                 inputs = batch
                 # Forward
                 inputs = {k: v.to(accelerator.device) for k, v in inputs.items()}
+                inputs['pixel_values'] = inputs['pixel_values'].to(dtype=model.dtype)
                 inputs.update({'return_loss': True})
                 outputs = model(**inputs)
                 # Get loss
@@ -307,6 +309,7 @@ def main(
                         logger.info(f"Saved state to {save_path}")
 
                 if global_step % validation_step_interv == 0:
+                    model.eval()
                     # if accelerator.is_main_process:
                     val_pbar = tqdm(val_dloader, leave=False, disable=not accelerator.is_local_main_process)
                     val_pbar.set_description("Val")
@@ -317,6 +320,7 @@ def main(
 
                         # Forward
                         inputs = {k: v.to(accelerator.device) for k, v in inputs.items()}
+                        inputs['pixel_values'] = inputs['pixel_values'].to(dtype=model.dtype)
                         inputs.update({'return_loss': True})
                         with torch.no_grad():
                             outputs = model(**inputs)
@@ -333,6 +337,7 @@ def main(
                     val_mean_loss = np.mean(val_losses)
                     accelerator.log({"val_mean_loss": val_mean_loss}, step=global_step)
                     val_pbar.set_postfix({"val_mean_loss": val_mean_loss})
+                    model.train()
                     
 
             if global_step >= max_train_steps:
