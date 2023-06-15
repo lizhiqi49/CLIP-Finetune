@@ -8,8 +8,9 @@ import json
 import argparse
 import numpy as np
 import torch
+import imageio.v3 as imageio
 from tqdm.auto import tqdm
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 from torch.utils.data import DataLoader
 
 from transformers import CLIPProcessor, CLIPModel
@@ -139,7 +140,9 @@ class Evaluator:
         device = logits.device
         
         ks = torch.tensor(ks).long().to(device)
-        gt_labels = torch.tensor(gt_labels).long().to(device)
+        if not isinstance(gt_labels, torch.Tensor):
+            gt_labels = torch.tensor(gt_labels)
+        gt_labels = gt_labels.long().to(device)
 
         k_max = ks.max()
         assert k_max == ks[-1], "The given ks should be in ascending order"
@@ -218,16 +221,30 @@ class Evaluator:
         
         if replace_backend_image_features:
             self.backend_image_features = image_features
-        
-        if use_backend_text_features:
-            if self.backend_text_features is None:
-                if captions is not None or text_encoding is not None:
-                    print("`backend_text_features` is None, use the features of given captions or text_encoding instead.")
-                    text_features = self.extract_text_features(captions, text_encoding)
+            
+        if self.backend_text_features is None and captions is None and text_encoding is None:
+            raise ValueError("`backend_text_features` is None, and no captions or text_encoding given!")
+        else:
+            if use_backend_text_features:
+                if self.backend_text_features is None:
+                    if captions is not None or text_encoding is not None:
+                        print("`backend_text_features` is None, use the features of given captions or text_encodings instead.")
+                        text_features = self.extract_text_features(captions, text_encoding)
+                        # self.backend_image_features = image_features
                 else:
-                    raise ValueError("`backend_text_features` is None, and no captions or text_encoding given!")
+                    text_features = self.backend_text_features
             else:
                 text_features = self.extract_text_features(captions, text_encoding)
+        
+        # if use_backend_text_features:
+        #     if self.backend_text_features is None:
+        #         if captions is not None or text_encoding is not None:
+        #             print("`backend_text_features` is None, use the features of given captions or text_encoding instead.")
+        #             text_features = self.extract_text_features(captions, text_encoding)
+        #         else:
+        #             raise ValueError("`backend_text_features` is None, and no captions or text_encoding given!")
+        #     else:
+        #         text_features = self.extract_text_features(captions, text_encoding)
 
         if replace_backend_text_features:
             self.backend_text_features = text_features
@@ -251,7 +268,8 @@ def main(
     pretrained_clip_path: str = None,
     pretrained_lora_path: str = None,
     batch_size: int = 1000,
-    ks: Union[int, list[int]] = 1 
+    ks: Union[int, list[int]] = 1,
+    retrieval_type: Literal['image', 'text'] = 'image',
 ):
 
     dtype = torch.float16   # Use fp16 for evaluation
@@ -275,9 +293,22 @@ def main(
     
     # Load validation dataset
     eval_dset = CLIPDataset(root=data_root, split='val', processor=processor)
-    all_captions = eval_dset.captions
-    text_features = evaluator.extract_text_features(all_captions)
-    evaluator.backend_text_features = text_features
+    if retrieval_type == 'text':
+        print("Performing text retrieval, load all text features of the dataset as backend.")
+        all_captions = eval_dset.captions
+        text_features = evaluator.extract_text_features(all_captions)
+        evaluator.backend_text_features = text_features
+    elif retrieval_type == 'image':
+        print("Performing image retrieval, load all image features of the dataset as backend.")
+        pixel_values = []
+        for i in range(len(eval_dset)):
+            pixel_value = eval_dset[i]['pixel_values']
+            pixel_values.append(pixel_value)
+        pixel_values = torch.stack(pixel_values)
+        image_features = evaluator.extract_image_features(pixel_values=pixel_values)
+        evaluator.backend_image_features = image_features
+    else:
+        raise ValueError(f"Unsupported retrieval type {retrieval_type}.")
 
     eval_dloader = DataLoader(
         eval_dset, batch_size=batch_size,
@@ -292,11 +323,18 @@ def main(
         else:
             gt_labels = indices[batch_size*i]
         pixel_values = batch['pixel_values']
+        text_encoding = {
+            'input_ids': batch['input_ids'],
+            'attention_mask': batch['attention_mask']
+        }
         hit_ratio_k = evaluator.evaluate(
             pixel_values=pixel_values,
+            text_encoding=text_encoding,
             gt_labels=gt_labels,
             ks=ks,
-            use_backend_text_features=True
+            use_backend_text_features=retrieval_type=='text',
+            use_backend_image_features=retrieval_type=='image',
+            for_image=retrieval_type=='text',
         )
         hit_ratio_k *= len(gt_labels)
 
@@ -322,6 +360,8 @@ if __name__ == '__main__':
     parser.add_argument("--pretrained_lora_path", type=str, default=None)
     parser.add_argument("--batch_size", type=int, default=1000,)
     parser.add_argument("--ks", type=int, nargs='+')
+    parser.add_argument("--retrieval_type", type=str, default='image',
+                        help="The target of retrieval, `image` or `text`.")
     args = parser.parse_args()
 
     main(**vars(args))
