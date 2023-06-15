@@ -1,4 +1,4 @@
-exp_name: clip_ft_full_raw_data
+exp_name: clip_ft_full_raw
 data_root: ./dataset
 pretrained_clip_path: ../huggingface_models/openai--clip-vit-base-patch16
 use_lora: False

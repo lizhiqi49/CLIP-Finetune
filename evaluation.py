@@ -236,16 +236,6 @@ class Evaluator:
             else:
                 text_features = self.extract_text_features(captions, text_encoding)
         
-        # if use_backend_text_features:
-        #     if self.backend_text_features is None:
-        #         if captions is not None or text_encoding is not None:
-        #             print("`backend_text_features` is None, use the features of given captions or text_encoding instead.")
-        #             text_features = self.extract_text_features(captions, text_encoding)
-        #         else:
-        #             raise ValueError("`backend_text_features` is None, and no captions or text_encoding given!")
-        #     else:
-        #         text_features = self.extract_text_features(captions, text_encoding)
-
         if replace_backend_text_features:
             self.backend_text_features = text_features
 

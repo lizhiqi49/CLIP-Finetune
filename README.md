@@ -77,10 +77,11 @@ accelerate launch train.py --config configs/{exp_name}.yaml
 ```
 python evaluation.py --data_root {data_root} --batch_size {batch_size} --ks 1 10 50 \
     --pretrained_clip_path {pretrained_clip_path} \
-    --pretrained_lora_path {pretrained_lora_path}
+    --pretrained_lora_path {pretrained_lora_path} \
+    --retrieval_type image
 ```
 
-This command will compute metrics of `hit@1,10,50` on the validation dataset of given `data_root` with `batch_size`,  `pretrained_clip_path`, `pretrained_lora_path` specified. When both two pretrained model path provided, `pretrained_lora_path` first.
+This command will compute metrics of `hit@1,10,50` for image retrieval on the validation dataset of given `data_root` with `batch_size`,  `pretrained_clip_path`, `pretrained_lora_path` specified. When both two pretrained model path provided, `pretrained_lora_path` first.
 
 Defaultly it will compute `hit@k` for images on all captions in the validation dataset. Finally, a .json file contains evaluation results will be saved in the provided pretrained path.
 
