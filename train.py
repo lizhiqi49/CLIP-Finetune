@@ -201,6 +201,7 @@ def main(
     model, optimizer, train_dloader, val_dloader, lr_scheduler = accelerator.prepare(
         model, optimizer, train_dloader, val_dloader, lr_scheduler
     )
+    model_dtype = model.dtype if hasattr(model, 'dtype') else model.module.dtype
     
         
     # Move model to device and cast to weight_dtype
@@ -274,7 +275,7 @@ def main(
                 inputs = batch
                 # Forward
                 inputs = {k: v.to(accelerator.device) for k, v in inputs.items()}
-                inputs['pixel_values'] = inputs['pixel_values'].to(dtype=model.dtype)
+                inputs['pixel_values'] = inputs['pixel_values'].to(dtype=model_dtype)
                 inputs.update({'return_loss': True})
                 outputs = model(**inputs)
                 # Get loss
@@ -320,7 +321,7 @@ def main(
 
                         # Forward
                         inputs = {k: v.to(accelerator.device) for k, v in inputs.items()}
-                        inputs['pixel_values'] = inputs['pixel_values'].to(dtype=model.dtype)
+                        inputs['pixel_values'] = inputs['pixel_values'].to(dtype=model_dtype)
                         inputs.update({'return_loss': True})
                         with torch.no_grad():
                             outputs = model(**inputs)
